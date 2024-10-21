@@ -4,71 +4,233 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Wallet - iTon</title>
-    <link rel="stylesheet" href="assets/css/wallet.css">
+    <link rel="stylesheet" href="assets/js/wallet.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.6.0/css/fontawesome.min.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
     <link href="https://fonts.cdnfonts.com/css/i-icefrost" rel="stylesheet">
 </head>
-</head>
 <body>
     <div class="container">
-        <!-- Header Section -->
         <div class="header">
-            <img src="assets/images/logo.png" alt="Logo" class="logo">
-            
-                <div class="token-count">
-                    G:<span class="points-display" id="balance">:0</span>
-                </div>
-            
+            <h1>GTon</h1>
         </div>
 
-
-        <!-- Wallet Section -->
         <div class="wallet-section">
-          
             <div class="wallet-info">
-                
+                <p id="g-balance">G: 00</p>
+                <p id="ton-balance">TON: 0</p>
             </div>
             <div class="wallet-box">
-                <div class="G">
-                    <p>G:302k</p>
-                    <p>TON:0</p>
-               </div>
-                <button class="ton-wallet-btn">TON wallet</button>
+                <button class="ton-wallet-btn" onclick="showWalletProviders()">
+                    <i class="fas fa-wallet"></i> Connect Wallet
+                </button>
             </div>
         </div>
 
-        <!-- Tabs Section -->
+        <div id="wallet-providers" class="wallet-providers" style="display: none;">
+            <h3>Select Your Wallet Provider</h3>
+            <div class="provider-logos">
+                <img src="path/to/tonwallet-logo.png" alt="TON Wallet" onclick="connectToProvider('tonwallet')" />
+                <img src="path/to/other-wallet-logo.png" alt="Other Wallet" onclick="connectToProvider('otherwallet')" />
+                <!-- Add more wallet provider logos as needed -->
+            </div>
+        </div>
+
         <div class="tabs-section">
-            <button class="tab active">Withdraw</button>
-            <button class="tab">Swap</button>
-            <button class="tab">Transaction</button>
+            <button class="tab active" onclick="showTab('deposit')">Deposit</button>
+            <button class="tab" onclick="showTab('swap')">Swap</button>
+            <button class="tab" onclick="showTab('transaction')">Transaction</button>
         </div>
 
-        <!-- Withdraw Section -->
-        <div class="withdraw-section">
-            <h3>Withdraw TON</h3>
-            <div class="withdraw-box">
-                <label for="withdraw-amount">Enter amount</label>
-                <input type="text" id="withdraw-amount" placeholder="0">
-                <p class="available-amount">Available: 0 TON</p>
+        <div id="deposit" class="deposit-section">
+            <h3>Deposit TON</h3>
+            <div class="deposit-box">
+                <label for="deposit-amount">Enter amount</label>
+                <input type="text" id="deposit-amount" placeholder="0">
+                <p class="minimum-deposit">Minimum: 0.13 TON</p>
             </div>
-            <button class="withdraw-btn">Withdraw TON</button>
-            <p class="withdraw-note">Note: Withdrawal status will be marked as "Pending" until processed.</p>
+            <button onclick="depositTon()">Deposit</button>
+            <p class="deposit-note">Note: A minimum deposit of 0.13 TON is required to verify your wallet connection.</p>
         </div>
 
-        <!-- Footer Navigation Menu -->
-        <!-- Footer Navigation Menu -->
-        <div class="nav" style="background-color: black;">
+        <div id="swap" class="tab-content" style="display: none;">
+            <h3>Swap TON</h3>
+            <p>Swap functionality coming soon...</p>
+        </div>
+
+        <div id="transaction" class="tab-content" style="display: none;">
+            <h3>Transaction History</h3>
+            <p>No transactions available.</p>
+        </div>
+
+        <div class="nav">
             <div class="navbar">
                 <ul class="menu">
                     <li><a href="index.html"><i class="fas fa-coins"></i> Earn</a></li>
-                     <li><a href="task.html"><i class="fas fa-tasks"></i> Task</a></li>
-                     <li><a href="frens.html"><i class="fas fa-user-friends"></i> Friend</a></li>
+                    <li><a href="task.html"><i class="fas fa-tasks"></i> Task</a></li>
+                    <li><a href="frens.html"><i class="fas fa-user-friends"></i> Friend</a></li>
                     <li><a href="wallet.html"><i class="fas fa-wallet"></i> Wallet</a></li>
                 </ul>
             </div>
         </div>
     </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/tonweb/dist/tonweb.js"></script>
+    <script>
+        const tonweb = new TonWeb({
+            provider: {
+                url: 'https://testnet.toncenter.com/api/v2/jsonRPC',
+                apiKey: 'YOUR_API_KEY',
+            },
+        });
+
+        let walletAddress;
+
+        function showWalletProviders() {
+            document.getElementById('wallet-providers').style.display = 'block';
+        }
+
+        async function connectToProvider(provider) {
+            // Logic to connect to the selected wallet provider
+            if (provider === 'tonwallet') {
+                if (window.TON) {
+                    try {
+                        walletAddress = await window.TON.connect();
+                        alert(`Connected to wallet: ${walletAddress}`);
+                        await handleBalance(walletAddress);
+                    } catch (error) {
+                        alert("Connection failed! Please try again.");
+                    }
+                } else {
+                    alert("Please install a compatible TON wallet.");
+                }
+            }
+            // Handle other providers similarly...
+        }
+
+        async function handleBalance(address) {
+            const balance = await getBalance(address);
+            if (balance >= 0.13) {
+                const success = await deductTon(address, 0.13);
+                if (success) {
+                    alert("Wallet verified successfully!");
+                    document.getElementById('ton-balance').textContent = 'TON: 0.13';
+                } else {
+                    alert("Transaction failed. Ensure you have sufficient funds.");
+                }
+            } else {
+                alert("Insufficient balance. Please ensure you have at least 0.13 TON.");
+            }
+        }
+
+        async function getBalance(address) {
+            try {
+                const balance = await tonweb.getBalance(address);
+                return tonweb.utils.fromNano(balance);
+            } catch (error) {
+                console.error("Error fetching balance:", error);
+                return 0;
+            }
+        }
+
+        async function deductTon(walletAddress, amount) {
+            try {
+                const transaction = await tonweb.createTransaction({
+                    to: walletAddress,
+                    amount: tonweb.utils.toNano(amount),
+                });
+                
+                const result = await transaction.send();
+                return result;
+            } catch (error) {
+                console.error("Transaction failed:", error);
+                return false;
+            }
+        }
+
+        function depositTon() {
+            const amount = document.getElementById('deposit-amount').value;
+            if (amount && parseFloat(amount) >= 0.13) {
+                alert(`You have successfully deposited ${amount} TON.`);
+                const currentBalance = parseFloat(document.getElementById('ton-balance').textContent.split(': ')[1]);
+                const newBalance = currentBalance + parseFloat(amount);
+                document.getElementById('ton-balance').textContent = `TON: ${newBalance.toFixed(2)}`;
+            } else {
+                alert("Please enter a valid amount. The minimum deposit is 0.13 TON.");
+            }
+        }
+
+        function showTab(tabName) {
+            const tabs = document.querySelectorAll('.tab-content');
+            tabs.forEach(tab => tab.style.display = 'none');
+            document.getElementById(tabName).style.display = 'block';
+
+            const tabButtons = document.querySelectorAll('.tab');
+            tabButtons.forEach(button => button.classList.remove('active'));
+            event.target.classList.add('active');
+        }
+    </script>
+    <style>
+        /* Add your custom CSS here */
+        .container {
+            padding: 20px;
+            font-family: 'i-icefrost', sans-serif;
+        }
+        .header {
+            text-align: center;
+        }
+        .wallet-providers {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            margin-top: 20px;
+        }
+        .provider-logos {
+            display: flex;
+            justify-content: space-around;
+            flex-wrap: wrap;
+            max-width: 600px;
+            width: 100%;
+        }
+        .provider-logos img {
+            width: 80px;
+            height: auto;
+            cursor: pointer;
+            margin: 10px;
+        }
+        .wallet-info {
+            display: flex;
+            justify-content: space-between;
+        }
+        .nav {
+            background-color: black;
+        }
+        .nav .navbar .menu {
+            list-style: none;
+            padding: 0;
+        }
+        .nav .navbar .menu li {
+            display: inline;
+            margin-right: 20px;
+        }
+        .nav .navbar .menu li a {
+            color: white;
+            text-decoration: none;
+        }
+        .nav .navbar .menu li a:hover {
+            text-decoration: underline;
+        }
+
+        /* Responsive Styles */
+        @media (max-width: 600px) {
+            .provider-logos {
+                flex-direction: column;
+                align-items: center;
+            }
+            .provider-logos img {
+                width: 60px;
+            }
+        }
+    </style>
 </body>
 </html>
