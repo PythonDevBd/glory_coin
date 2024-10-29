@@ -50,7 +50,7 @@ header {
 
 /* Invite Section */
 .invite-section {
-    margin-top: 80px;
+    
     text-align: center;
 }
 
@@ -196,4 +196,96 @@ header {
     background-color: #27e696; /* Change background color on hover */
     color: #fff; /* Ensure text remains readable */
     border-radius: 5px; /* Rounded corners for hover */
+}
+.invite-section {
+    background-color: #222222; /* Light background for contrast */
+    opacity: 80%;
+    padding: 20px;
+    border-radius: 8px;
+    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+    text-align: center;
+}
+
+.referral-container {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin: 20px 0;
+    border: 1px solid #ddd; /* Border around the referral link */
+    border-radius: 5px;
+    
+}
+
+.referral-input {
+    flex: 1;
+    padding: 10px;
+    border: none;
+    border-radius: 5px 0 0 5px; /* Rounded corners on the left */
+    font-size: 16px;
+    color: #333; /* Dark text color */
+}
+
+.copy-btn {
+    background-color: #007bff; /* Primary button color */
+    color: white;
+    padding: 10px 20px;
+    border: none;
+    border-radius: 0 5px 5px 0; /* Rounded corners on the right */
+    cursor: pointer;
+    font-size: 16px;
+    transition: background-color 0.3s;
+}
+
+.copy-btn:hover {
+    background-color: #0056b3; /* Darker shade on hover */
+}
+
+.invite-buttons {
+    margin-top: 15px; /* Space above invite buttons */
+}
+
+.invite-btn {
+    background-color: #28a745; /* Green button color */
+    color: white;
+    padding: 10px 20px;
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+    font-size: 16px;
+    transition: background-color 0.3s;
+    margin: 0 10px; /* Space between buttons */
+}
+
+.invite-btn:hover {
+    background-color: #218838; /* Darker shade on hover */
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+    .invite-buttons {
+        justify-content: space-between; /* Keep buttons in a row */
+    }
+
+    .stat-box {
+        flex: 1 1 100%; /* Full width on smaller screens */
+    }
+
+    .navbar {
+        flex-direction: row; /* Keep nav items in a row */
+    }
+
+    .menu li {
+        margin: 0 5px; /* Space between nav items */
+    }
+}
+
+@media (max-width: 480px) {
+    .header {
+        flex-direction: column; /* Stack logo and token count */
+        align-items: flex-start; /* Align items to the left */
+    }
+
+    .logo {
+        height: 40px; /* Smaller logo for mobile */
+    }
 }
